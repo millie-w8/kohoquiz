@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>広報委員会クイズラリー</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode"></script> 
+</head>
+<body>
+    <div class="container" style="margin-top: 4rem;">
+        <h1 class="neon-title">QRコードをスキャンして<br>
+            クイズに答えよう！</h1>
+        
+        <div id="scanner-section">
+            <button id="start-scan-btn" class="neon-btn">スキャンする</button>
+            <div id="reader" style="display: none;"></div>
+        </div>
+
+        <div id="quiz-section" style="display: none;">
+            <h2 id="shop-name">Shop Name</h2>
+            <p id="question-text">Loading question...</p>
+            <div id="options-container" class="options-grid"></div>
+            <p id="feedback-message"></p>
+        </div>
+
+        <div class="progress-section">
+            <h3>DECRYPTED DATA:</h3>
+            <div id="letters-container" class="letters-grid"></div>
+            <p id="completion-message" class="neon-success" style="display: none;">
+                ALL DATA UNLOCKED. YOU HAVE COMPLETED THE RALLY.
+            </p>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
