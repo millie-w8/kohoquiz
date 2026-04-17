@@ -53,75 +53,66 @@ function stopScanner() {
     return html5QrcodeScanner.clear().catch(err => console.warn("Scanner clear error:", err));
 }
 
-/**
- * Extract the numeric shop ID from whatever the QR code contains.
- * Handles all three common formats:
- *   "3"
- *   "https://kohoquizrally2026.onrender.com/?shop=3"
- *   "/?shop=3"
- */
-// ── Replace extractShopId + onScanSuccess with these ─────────────────────────
+// ── Short URL resolver with multiple fallbacks ────────────────────────────────
 
-/**
- * Given a URL string, extract the ?shop= param.
- * Returns null if not found.
- */
 function getShopParam(urlString) {
-    // Try as a full URL
     try {
         const url = new URL(urlString.trim());
         const param = url.searchParams.get('shop');
         if (param) return param.trim();
     } catch (_) {}
-
-    // Try regex fallback for relative-style strings
     const match = urlString.match(/[?&]shop=(\w+)/);
     if (match) return match[1];
-
     return null;
 }
 
-/**
- * Resolves a scanned value to a shop ID.
- * Handles 3 cases:
- *   1. Raw number: "3"
- *   2. Direct URL: "https://kohoquizrally2026.onrender.com/?shop=3"
- *   3. Short URL:  "https://qrco.de/bgk07m"  → fetches redirect → extracts shop param
- */
+// 1. Create the Map
+const SHORT_URL_MAP = {
+    'bgk07m': '1',
+    'bgkOH0': '2',
+    'bgkOH6': '3',
+    'bgkOHI': '4',
+    'bgkOHU': '5',
+    'bgkOHc': '6',
+    'bgkOY3': '7',
+    'bgkOYD': '8',
+    'bgkOYJ': '9',
+    'bgkOYS': '10',
+    'bgkOYb': '11',
+    'bgkOZH': '12',
+    'bgkOZS': '13',
+    'bgkOZj': '14',
+    'bgkOae': '15',
+    'bgkOal': '16',
+    'bgkOas': '17',
+    'bgkOhc': '18',
+};
+
+// 2. The new, lightning-fast Resolver
 async function resolveShopId(raw) {
     const trimmed = raw.trim();
 
-    // Case 1: plain number
+    // Check if it's already a shop number
     if (/^\d+$/.test(trimmed)) return trimmed;
 
-    // Case 2: direct URL with ?shop= already in it
-    const direct = getShopParam(trimmed);
-    if (direct) return direct;
+    // Check if it's a full URL we can read directly
+    const urlParams = new URLSearchParams(trimmed.split('?')[1]);
+    if (urlParams.has('shop')) return urlParams.get('shop');
 
-    // Case 3: short URL — resolve via CORS proxy
-    // allorigins.win returns { contents, status } where status includes the final URL
+    // THE FIX: Check our local table for the short code
     try {
-        showStatus('Resolving QR link...', '#0ff');
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(trimmed)}`;
-        const res = await fetch(proxyUrl);
-        const json = await res.json();
-
-        // allorigins returns the final URL in status.url
-        if (json.status && json.status.url) {
-            const resolved = getShopParam(json.status.url);
-            if (resolved) return resolved;
+        const urlObj = new URL(trimmed);
+        const slug = urlObj.pathname.replace('/', ''); // This gets "bgk07m"
+        
+        if (SHORT_URL_MAP[slug]) {
+            console.log("Match found in table: Shop " + SHORT_URL_MAP[slug]);
+            return SHORT_URL_MAP[slug];
         }
-
-        // Also search the returned HTML body for ?shop= just in case
-        if (json.contents) {
-            const bodyMatch = json.contents.match(/[?&]shop=(\w+)/);
-            if (bodyMatch) return bodyMatch[1];
-        }
-    } catch (err) {
-        console.error("Short URL resolve failed:", err);
+    } catch (e) {
+        console.error("Not a valid URL, trying raw slug match");
     }
 
-    return null; // could not resolve
+    return null; 
 }
 
 /**
