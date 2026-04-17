@@ -60,35 +60,98 @@ function stopScanner() {
  *   "https://kohoquizrally2026.onrender.com/?shop=3"
  *   "/?shop=3"
  */
-function extractShopId(raw) {
-    const trimmed = raw.trim();
+// ── Replace extractShopId + onScanSuccess with these ─────────────────────────
 
-    // Try to parse as a URL first (handles absolute URLs)
+/**
+ * Given a URL string, extract the ?shop= param.
+ * Returns null if not found.
+ */
+function getShopParam(urlString) {
+    // Try as a full URL
     try {
-        const url = new URL(trimmed);
+        const url = new URL(urlString.trim());
         const param = url.searchParams.get('shop');
         if (param) return param.trim();
     } catch (_) {}
 
-    // Try relative URL pattern  /?shop=3  or  ?shop=3
-    const match = trimmed.match(/[?&]shop=(\w+)/);
+    // Try regex fallback for relative-style strings
+    const match = urlString.match(/[?&]shop=(\w+)/);
     if (match) return match[1];
 
-    // Fall back: assume the raw text itself is the shop ID
-    return trimmed;
+    return null;
+}
+
+/**
+ * Resolves a scanned value to a shop ID.
+ * Handles 3 cases:
+ *   1. Raw number: "3"
+ *   2. Direct URL: "https://kohoquizrally2026.onrender.com/?shop=3"
+ *   3. Short URL:  "https://qrco.de/bgk07m"  → fetches redirect → extracts shop param
+ */
+async function resolveShopId(raw) {
+    const trimmed = raw.trim();
+
+    // Case 1: plain number
+    if (/^\d+$/.test(trimmed)) return trimmed;
+
+    // Case 2: direct URL with ?shop= already in it
+    const direct = getShopParam(trimmed);
+    if (direct) return direct;
+
+    // Case 3: short URL — resolve via CORS proxy
+    // allorigins.win returns { contents, status } where status includes the final URL
+    try {
+        showStatus('Resolving QR link...', '#0ff');
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(trimmed)}`;
+        const res = await fetch(proxyUrl);
+        const json = await res.json();
+
+        // allorigins returns the final URL in status.url
+        if (json.status && json.status.url) {
+            const resolved = getShopParam(json.status.url);
+            if (resolved) return resolved;
+        }
+
+        // Also search the returned HTML body for ?shop= just in case
+        if (json.contents) {
+            const bodyMatch = json.contents.match(/[?&]shop=(\w+)/);
+            if (bodyMatch) return bodyMatch[1];
+        }
+    } catch (err) {
+        console.error("Short URL resolve failed:", err);
+    }
+
+    return null; // could not resolve
+}
+
+/**
+ * Show a temporary status message above the scan button.
+ */
+function showStatus(msg, color) {
+    let el = document.getElementById('scan-status');
+    if (!el) {
+        el = document.createElement('p');
+        el.id = 'scan-status';
+        el.style.cssText = 'font-size:14px; margin:8px 0;';
+        startScanBtn.parentNode.insertBefore(el, startScanBtn.nextSibling);
+    }
+    el.style.color = color || '#fff';
+    el.innerText = msg;
 }
 
 function onScanSuccess(decodedText) {
-    stopScanner().then(() => {
-        readerDiv.style.display   = 'none';
+    stopScanner().then(async () => {
+        readerDiv.style.display    = 'none';
         startScanBtn.style.display = 'block';
-        startScanBtn.innerText    = 'SCAN NEXT SHOP';
+        startScanBtn.innerText     = 'SCAN NEXT SHOP';
 
-        const shopId = extractShopId(decodedText);
+        const shopId = await resolveShopId(decodedText);
 
-        if (quizData[shopId]) {
+        // Clear status message
+        showStatus('', '');
+
+        if (shopId && quizData[shopId]) {
             if (unlockedShops.includes(shopId)) {
-                // Already answered — tell the user and let them scan again
                 quizSection.style.display = 'block';
                 quizSection.innerHTML =
                     `<h2 style="color:#0ff; margin-bottom:12px;">${quizData[shopId].shop}</h2>
@@ -98,11 +161,12 @@ function onScanSuccess(decodedText) {
                 showQuiz(shopId);
             }
         } else {
-            // Unknown ID — show it so you can debug
             quizSection.style.display = 'block';
             quizSection.innerHTML =
-                `<p style="color:#f00;">SYSTEM ERROR: Unrecognized shop ID "<strong>${shopId}</strong>".<br>
-                 Raw QR data: <code style="word-break:break-all;">${decodedText}</code></p>`;
+                `<p style="color:#f00;">SYSTEM ERROR: Could not identify shop.<br>
+                 <span style="color:#aaa; font-size:13px;">Scanned: <code style="word-break:break-all;">${decodedText}</code></span></p>
+                 <p style="color:#aaa; font-size:13px; margin-top:8px;">Check that your QR code links to<br>
+                 <code>...?shop=1</code> through <code>...?shop=18</code></p>`;
         }
     });
 }
