@@ -1,286 +1,431 @@
-// app.js
+// ============================================================
+// app.js — Quiz App Main Logic
+// Fixes applied:
+//   1. Rating is positioned before "Confirm Answer" in HTML
+//   2. No scroll-of-letters on quiz page
+//   3. Random shop order supported (completedShops is a Set, order irrelevant)
+//   4. Close scanner handled in index.html
+//   5. Auto-redirect to index.html after 5s (correct or wrong)
+//   6. Correct answer NOT revealed on wrong guess
+// ============================================================
 
-const quizData = {
-    1:  { shop: "Shop 1 (Cafe)",         question: "What is 2 + 2?",          options: ["3","4","5","6"],                        answer: "4",      letter: "あ" },
-    2:  { shop: "Shop 2 (Haunted House)", question: "What color is the sky?",  options: ["Blue","Green","Red","Yellow"],           answer: "Blue",   letter: "か" },
-    3:  { shop: "Shop 3 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "つ" },
-    4:  { shop: "Shop 4 (Arcade)",       question: "What is the capital of France?", options: ["London","Berlin","Paris","Madrid"],answer: "Paris",  letter: "き" },
-    5:  { shop: "Shop 5 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "に" },
-    6:  { shop: "Shop 6 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "さ" },
-    7:  { shop: "Shop 7 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "け" },
-    8:  { shop: "Shop 8 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "わ" },
-    9:  { shop: "Shop 9 (Game Center)",  question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "れ" },
-    10: { shop: "Shop 10 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "ら" },
-    11: { shop: "Shop 11 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "の" },
-    12: { shop: "Shop 12 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "は" },
-    13: { shop: "Shop 13 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "ま" },
-    14: { shop: "Shop 14 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "ゆ" },
-    15: { shop: "Shop 15 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "う" },
-    16: { shop: "Shop 16 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "5" },
-    17: { shop: "Shop 17 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "1" },
-    18: { shop: "Shop 18 (Game Center)", question: "Capital of Japan?",        options: ["Osaka","Kyoto","Tokyo","Nagoya"],        answer: "Tokyo",  letter: "7" },
-};
+// ---- Question & Answer Data ---------------------------------
+// EDIT: 'q', 'choices', 'answer' (index 0–3 of correct choice), 'letter'
 
-// ── Persistent progress (stored as array of number strings) ──────────────────
-let unlockedShops = JSON.parse(localStorage.getItem("festivalProgress")) || [];
+const QUESTIONS = [
+  {
+    shopId: 1,
+    q: "<2Cの企画名>の入り口でイメージしているものはなに？",
+    choices: ["神社", "うみ", "いぬ", "キツツキ"],
+    answer: 0,
+    letter: "あ"
+  },
+  {
+    shopId: 2,
+    q: "高校一年生の遠足の行き先はどこ？",
+    choices: ["横浜", "上野", "沖縄", "北海道"],
+    answer: 1,
+    letter: "か"
+  },
+  {
+    shopId: 3,
+    q: "〈3Cの企画名〉でやってはいけない事はなに？",
+    choices: ["物を盗む", "音を立てる", "ゲームを楽しむ", "友達と来る"],
+    answer: 1,
+    letter: "つ"
+  },
+  {
+    shopId: 4,
+    q: "〈2Aの企画名〉で遊べないゲームはどれ？",
+    choices: ["ブラックジャック", "丁半", "ルーレット", "ポーカー"],
+    answer: 3,
+    letter: "き"
+  },
+  {
+    shopId: 5,
+    q: "1DのクラスTシャツはどこのサッカーチームをモデルにした？",
+    choices: ["ドイツ", "イタリア", "ブラジル", "アルゼンチン"],
+    answer: 2,
+    letter: "に"
+  },
+  {
+    shopId: 6,
+    q: "メイドカフェはもともと、どこで始まった？",
+    choices: ["渋谷", "沼津", "秋葉原", "銀座"],
+    answer: 2,
+    letter: "さ"
+  },
+  {
+    shopId: 7,
+    q: "2Dの出し物、〈2Dの企画名〉の名前の由来は？",
+    choices: ["ハロウィン", "海賊", "節分", "山賊"],
+    answer: 1,
+    letter: "け"
+  },
+  {
+    shopId: 8,
+    q: "お化け屋敷はどこのだれが作った？",
+    choices: ["江戸時代の町医者", "琉球の武道家", "イギリスの発明家", "信濃の子供"],
+    answer: 0,
+    letter: "わ"
+  },
+  {
+    shopId: 9,
+    q: "1αの企画、〈1αの企画名〉に出てくる動物はなに？",
+    choices: ["羊", "うさぎ", "ライオン", "馬"],
+    answer: 3,
+    letter: "れ"
+  },
+  {
+    shopId: 10,
+    q: "ジェンガの発祥の国はどこ？",
+    choices: ["アメリカ", "スウェーデン", "イギリス", "ドイツ"],
+    answer: 2,
+    letter: "ら"
+  },
+  {
+    shopId: 11,
+    q: "「占う」と同じく、「うらなう」という読みがある漢字はどれ？",
+    choices: ["相う", "点う", "術う", "卜う"],
+    answer: 3,
+    letter: "の"
+  },
+  {
+    shopId: 12,
+    q: "「嵐」はどんなグループ？",
+    choices: ["スポーツチーム", "お笑いチーム", "アイドルチーム", "料理チーム"],
+    answer: 2,
+    letter: "は"
+  },
+  {
+    shopId: 13,
+    q: "人の体で一番大きい臓器はどれ？",
+    choices: ["肝臓", "心臓", "肺", "皮膚"],
+    answer: 0,
+    letter: "ま"
+  },
+  {
+    shopId: 14,
+    q: "3Bの<3Bの企画名>で食べれないものはなに？",
+    choices: ["シフォンケーキ", "フロランタン", "マカロン", "クッキー"],
+    answer: 2,
+    letter: "ゆ"
+  },
+  {
+    shopId: 15,
+    q: "「賢の教室」がある教室の番号は？",
+    choices: ["305", "204", "304", "205"],
+    answer: 2,
+    letter: "う"
+  },
+  {
+    shopId: 16,
+    q: "ハワイ州の州の花はなに？",
+    choices: ["チューリップ", "ひまわり", "ハイビスカス", "つばき"],
+    answer: 2,
+    letter: "5"
+  },
+  {
+    shopId: 17,
+    q: "ここで起きる事件はなに？",
+    choices: ["失踪事件", "殺人事件", "3億円事件", "夜勤事件"],
+    answer: 0,
+    letter: "1"
+  },
+  {
+    shopId: 18,
+    q: "射的は何時代から始まった？",
+    choices: ["平安時代", "戦国時代", "江戸時代", "明治時代"],
+    answer: 3,
+    letter: "7"
+  }
+];
 
-// ── DOM refs ─────────────────────────────────────────────────────────────────
-const startScanBtn   = document.getElementById('start-scan-btn');
-const readerDiv      = document.getElementById('reader');
-const quizSection    = document.getElementById('quiz-section');
-let html5QrcodeScanner = null;
-let scannerRunning     = false;
+const CHOICE_KEYS = ['A', 'B', 'C', 'D'];
+const REDIRECT_DELAY = 5; // seconds before auto-return to index.html
 
-// ── Scanner ───────────────────────────────────────────────────────────────────
-startScanBtn.addEventListener('click', () => {
-    if (scannerRunning) return;
-    startScanBtn.style.display = 'none';
-    readerDiv.style.display    = 'block';
-    quizSection.style.display  = 'none';
+// ---- State ---------------------------------------------------
+let currentShopId  = null;
+let questionData   = null;
+let selectedChoice = null;
+let answered       = false;
+let countdownTimer = null;
 
-    html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        /* verbose= */ false
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-    scannerRunning = true;
+const el = id => document.getElementById(id);
+
+// ---- Navigation helper ---------------------------------------
+function goHome() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  window.location.href = 'index.html';
+}
+
+// ---- Init ----------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  currentShopId = parseInt(params.get('shop'), 10);
+
+  if (!currentShopId || currentShopId < 1 || currentShopId > 18) {
+    showError('Invalid shop QR code. Please scan a valid QR code at one of the shops.');
+    return;
+  }
+
+  questionData = QUESTIONS.find(q => q.shopId === currentShopId);
+
+  const state = QuizDB.getPlayerState();
+
+  // Whole game complete → jump to celebration
+  if (state.completed) {
+    window.location.replace('completion.html');
+    return;
+  }
+
+  // FIX 3: completedShops is treated as a plain array — order doesn't matter.
+  // The user can visit shops in any random order; we just check membership.
+  if (state.completedShops.includes(currentShopId)) {
+    showAlreadyAnswered(state);
+    return;
+  }
+
+  renderQuiz(state);
+  initStarRating();
+  el('submit-btn').addEventListener('click', submitAnswer);
 });
 
-function stopScanner() {
-    if (!html5QrcodeScanner || !scannerRunning) return Promise.resolve();
-    scannerRunning = false;
-    return html5QrcodeScanner.clear().catch(err => console.warn("Scanner clear error:", err));
+// ---- Render quiz ---------------------------------------------
+function renderQuiz(state) {
+  // Count how many have been answered regardless of order
+  const completedCount = state.completedShops.length;
+
+  el('shop-badge-text').textContent = `Shop ${String(currentShopId).padStart(2, '0')}`;
+  el('question-num').textContent    = `${completedCount} / 18`;
+  el('progress-fill').style.width   = (completedCount / 18 * 100) + '%';
+  el('question-text').textContent   = questionData.q;
+
+  buildChoices();
 }
 
-// ── Short URL resolver with multiple fallbacks ────────────────────────────────
-
-function getShopParam(urlString) {
-    try {
-        const url = new URL(urlString.trim());
-        const param = url.searchParams.get('shop');
-        if (param) return param.trim();
-    } catch (_) {}
-    const match = urlString.match(/[?&]shop=(\w+)/);
-    if (match) return match[1];
-    return null;
+// ---- Build choices -------------------------------------------
+function buildChoices() {
+  const list = el('choices-list');
+  list.innerHTML = '';
+  questionData.choices.forEach((text, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.dataset.index = i;
+    btn.innerHTML = `<span class="choice-key">${CHOICE_KEYS[i]}</span><span>${text}</span>`;
+    btn.addEventListener('click', () => selectChoice(i));
+    list.appendChild(btn);
+  });
+  selectedChoice = null;
+  answered = false;
+  el('submit-btn').disabled = true;
 }
 
-// 1. Create the Map
-const SHORT_URL_MAP = {
-    'bgk07m': '1',
-    'bgkOH0': '2',
-    'bgkOH6': '3',
-    'bgkOHI': '4',
-    'bgkOHU': '5',
-    'bgkOHc': '6',
-    'bgkOY3': '7',
-    'bgkOYD': '8',
-    'bgkOYJ': '9',
-    'bgkOYS': '10',
-    'bgkOYb': '11',
-    'bgkOZH': '12',
-    'bgkOZS': '13',
-    'bgkOZj': '14',
-    'bgkOae': '15',
-    'bgkOal': '16',
-    'bgkOas': '17',
-    'bgkOhc': '18',
-};
+// ---- Select a choice -----------------------------------------
+function selectChoice(index) {
+  if (answered) return;
+  selectedChoice = index;
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.classList.toggle('selected', i === index);
+  });
+  el('submit-btn').disabled = false;
+}
 
-// 2. The new, lightning-fast Resolver
-async function resolveShopId(raw) {
-    const trimmed = raw.trim();
+// ---- Submit answer -------------------------------------------
+function submitAnswer() {
+  if (selectedChoice === null || answered) return;
+  answered = true;
 
-    // Check if it's already a shop number
-    if (/^\d+$/.test(trimmed)) return trimmed;
+  const isCorrect = selectedChoice === questionData.answer;
 
-    // Check if it's a full URL we can read directly
-    const urlParams = new URLSearchParams(trimmed.split('?')[1]);
-    if (urlParams.has('shop')) return urlParams.get('shop');
-
-    // THE FIX: Check our local table for the short code
-    try {
-        const urlObj = new URL(trimmed);
-        const slug = urlObj.pathname.replace('/', ''); // This gets "bgk07m"
-        
-        if (SHORT_URL_MAP[slug]) {
-            console.log("Match found in table: Shop " + SHORT_URL_MAP[slug]);
-            return SHORT_URL_MAP[slug];
-        }
-    } catch (e) {
-        console.error("Not a valid URL, trying raw slug match");
+  // Disable all buttons — FIX 6: only mark selected wrong, never reveal correct
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === selectedChoice && !isCorrect) {
+      btn.classList.add('wrong');        // mark what they picked as wrong
     }
-
-    return null; 
-}
-
-/**
- * Show a temporary status message above the scan button.
- */
-function showStatus(msg, color) {
-    let el = document.getElementById('scan-status');
-    if (!el) {
-        el = document.createElement('p');
-        el.id = 'scan-status';
-        el.style.cssText = 'font-size:14px; margin:8px 0;';
-        startScanBtn.parentNode.insertBefore(el, startScanBtn.nextSibling);
+    // ← intentionally NOT adding 'correct' class to any button on wrong answer
+    if (i === selectedChoice && isCorrect) {
+      btn.classList.add('correct');      // mark their pick correct only when right
     }
-    el.style.color = color || '#fff';
-    el.innerText = msg;
+  });
+
+  el('submit-btn').disabled = true;
+  // Hide rating section after submitting
+  el('rating-section').style.display = 'none';
+
+  const stars = getStarRating();
+
+  QuizDB.saveResult({
+    shopId: currentShopId,
+    questionIndex: currentShopId - 1,
+    correct: isCorrect,
+    stars: stars,
+    attempts: 1
+  });
+
+  if (isCorrect) {
+    handleCorrect();
+  } else {
+    handleWrong();
+  }
 }
 
-function onScanSuccess(decodedText) {
-    stopScanner().then(async () => {
-        readerDiv.style.display    = 'none';
-        startScanBtn.style.display = 'block';
-        startScanBtn.innerText     = 'SCAN NEXT SHOP';
+// ---- Correct -------------------------------------------------
+function handleCorrect() {
+  const state = QuizDB.getPlayerState();
 
-        const shopId = await resolveShopId(decodedText);
+  // FIX 3: push into array regardless of order — no sorting needed
+  if (!state.completedShops.includes(currentShopId)) {
+    state.completedShops.push(currentShopId);
+  }
+  state.revealedLetters[currentShopId - 1] = questionData.letter;
 
-        // Clear status message
-        showStatus('', '');
+  const allDone = state.completedShops.length === 18;
+  if (allDone) state.completed = true;
 
-        if (shopId && quizData[shopId]) {
-            if (unlockedShops.includes(shopId)) {
-                quizSection.style.display = 'block';
-                quizSection.innerHTML =
-                    `<h2 style="color:#0ff; margin-bottom:12px;">${quizData[shopId].shop}</h2>
-                     <p style="color:#0f0; font-size:18px;">✔ DATA ALREADY DECRYPTED.</p>
-                     <p style="color:#aaa; margin-top:8px;">Scan the next shop!</p>`;
-            } else {
-                showQuiz(shopId);
-            }
-        } else {
-            quizSection.style.display = 'block';
-            quizSection.innerHTML =
-                `<p style="color:#f00;">SYSTEM ERROR: Could not identify shop.<br>
-                 <span style="color:#aaa; font-size:13px;">Scanned: <code style="word-break:break-all;">${decodedText}</code></span></p>
-                 <p style="color:#aaa; font-size:13px; margin-top:8px;">Check that your QR code links to<br>
-                 <code>...?shop=1</code> through <code>...?shop=18</code></p>`;
-        }
+  QuizDB.savePlayerState(state);
+
+  // Update counter & progress bar
+  el('question-num').textContent  = `${state.completedShops.length} / 18`;
+  el('progress-fill').style.width = (state.completedShops.length / 18 * 100) + '%';
+
+  // Show result panel
+  const panel = el('result-panel');
+  panel.className = 'result-panel correct-panel visible fade-in-up';
+  panel.innerHTML = `
+    <div class="result-icon">✦</div>
+    <div class="result-title correct-text">Correct!</div>
+    <div class="result-subtitle">A hidden letter has been unveiled.</div>
+    <div class="revealed-letter-spotlight">
+      Letter revealed:
+      <div class="revealed-letter-char">${questionData.letter}</div>
+    </div>
+  `;
+
+  if (allDone) {
+    // Special redirect to completion instead of index
+    startCountdown(5, () => window.location.replace('completion.html'));
+  } else {
+    // FIX 5: auto-return to index.html after 5 seconds
+    startCountdown(REDIRECT_DELAY, goHome);
+  }
+}
+
+// ---- Wrong ---------------------------------------------------
+function handleWrong() {
+  const panel = el('result-panel');
+  panel.className = 'result-panel wrong-panel visible fade-in-up';
+  panel.innerHTML = `
+    <div class="result-icon">✗</div>
+    <div class="result-title wrong-text">Incorrect</div>
+    <div class="result-subtitle">
+      That was not the right answer.<br>
+      Scan this shop's QR code again to retry.
+    </div>
+  `;
+
+  // FIX 5: auto-return to index.html after 5 seconds
+  startCountdown(REDIRECT_DELAY, goHome);
+}
+
+// ---- Countdown & auto-redirect --------------------------------
+// FIX 5 implementation: counts down visually then calls callback
+function startCountdown(seconds, callback) {
+  el('countdown-wrap').style.display = 'block';
+  el('submit-btn').style.display = 'none';
+
+  let remaining = seconds;
+  el('countdown-num').textContent = remaining;
+
+  // Animate the bar shrinking
+  // We give it one tick before shrinking so the transition fires
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el('countdown-bar').style.width = '0%';
     });
+  });
+
+  countdownTimer = setInterval(() => {
+    remaining -= 1;
+    el('countdown-num').textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdownTimer);
+      callback();
+    }
+  }, 1000);
 }
 
-function onScanFailure(_error) {
-    // The library fires this constantly while scanning — intentionally silent.
+// ---- Star rating ---------------------------------------------
+function getStarRating() {
+  const checked = document.querySelector('.star-input:checked');
+  return checked ? parseInt(checked.value, 10) : null;
 }
 
-// ── Quiz display ──────────────────────────────────────────────────────────────
-function showQuiz(shopId) {
-    quizSection.style.display = 'block';
-    // Restore original inner HTML structure in case it was replaced by an error msg
-    quizSection.innerHTML = `
-        <h2 id="shop-name"></h2>
-        <p id="question-text"></p>
-        <div id="options-container" class="options-grid"></div>
-        <p id="feedback-message"></p>
-    `;
+function initStarRating() {
+  document.querySelectorAll('.star-label').forEach(label => {
+    // Touch support
+    label.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const val = parseInt(label.dataset.value);
+      document.getElementById(label.getAttribute('for')).checked = true;
+      highlightStars(val);
+    }, { passive: false });
 
-    const data = quizData[shopId];
-    document.getElementById('shop-name').innerText    = data.shop;
-    document.getElementById('question-text').innerText = data.question;
-
-    const optionsContainer = document.getElementById('options-container');
-    data.options.forEach(option => {
-        const btn = document.createElement('button');
-        btn.innerText = option;
-        btn.onclick   = () => checkAnswer(option, data.answer, shopId);
-        optionsContainer.appendChild(btn);
+    label.addEventListener('click', () => {
+      highlightStars(parseInt(label.dataset.value));
     });
+  });
 }
 
-function checkAnswer(selected, correct, shopId) {
-    const feedback = document.getElementById('feedback-message');
-    if (selected === correct) {
-        feedback.style.color  = '#0f0';
-        feedback.innerText    = 'ACCESS GRANTED. Data unlocked.';
-
-        if (!unlockedShops.includes(shopId)) {
-            unlockedShops.push(shopId);
-            localStorage.setItem("festivalProgress", JSON.stringify(unlockedShops));
-        }
-
-        document.getElementById('options-container').style.display = 'none';
-        renderProgress();
-    } else {
-        feedback.style.color = '#f00';
-        feedback.innerText   = 'ACCESS DENIED. Try again.';
-    }
+function highlightStars(upTo) {
+  document.querySelectorAll('.star-label').forEach(label => {
+    label.classList.toggle('lit', parseInt(label.dataset.value) <= upTo);
+  });
 }
 
-// ── Progress grid ─────────────────────────────────────────────────────────────
-function renderProgress() {
-    const container = document.getElementById('letters-container');
-    container.innerHTML = '';
+// ---- Already answered screen ---------------------------------
+function showAlreadyAnswered(state) {
+  const completedCount = state.completedShops.length;
+  const container = document.querySelector('.container');
+  if (!container) return;
 
-    // Fixed display layout:
-    //  Row 1: [16]=5  ／  [17]=1  [18]=7
-    //  Row 2: [1]あ [2]か [3]つ [4]き [5]に [6]さ [7]け 、
-    //  Row 3: [8]わ [9]れ [10]ら [11]の [12]は [13]ま [14]ゆ [15]う
-    const rows = [
-        { shopIds: [16, 17, 18], separatorAfter: 16, separator: '／' },
-        { shopIds: [1, 2, 3, 4, 5, 6, 7],            trailingChar: '、' },
-        { shopIds: [8, 9, 10, 11, 12, 13, 14, 15] },
-    ];
-
-    let totalUnlocked = 0;
-
-    rows.forEach(row => {
-        const rowDiv = document.createElement('div');
-        rowDiv.style.cssText =
-            'display:flex; align-items:center; justify-content:center; gap:6px; width:100%; margin-bottom:8px;';
-
-        row.shopIds.forEach(id => {
-            const box = document.createElement('div');
-            box.classList.add('letter-box');
-
-            const unlocked = unlockedShops.includes(id.toString());
-            if (quizData[id] && unlocked) {
-                box.innerText = quizData[id].letter;
-                totalUnlocked++;
-            } else {
-                box.innerText = '?';
-                box.classList.add('hidden-letter');
-            }
-            rowDiv.appendChild(box);
-
-            // Insert mid-row separator (e.g. ／ after shop 16)
-            if (row.separatorAfter && id === row.separatorAfter) {
-                const sep = document.createElement('span');
-                sep.innerText      = row.separator;
-                sep.style.cssText  = 'color:#0ff; font-size:22px; line-height:1;';
-                rowDiv.appendChild(sep);
-            }
-        });
-
-        // Trailing character at end of row (e.g. 、)
-        if (row.trailingChar) {
-            const trail = document.createElement('span');
-            trail.innerText     = row.trailingChar;
-            trail.style.cssText = 'color:#0ff; font-size:22px; line-height:1;';
-            rowDiv.appendChild(trail);
-        }
-
-        container.appendChild(rowDiv);
-    });
-
-    if (totalUnlocked === 18) {
-        document.getElementById('completion-message').style.display = 'block';
-        quizSection.style.display  = 'none';
-        startScanBtn.style.display = 'none';
-    }
+  container.innerHTML = `
+    <div class="app-header">
+      <span class="app-logo">ミステリージャーニー</span>
+      <span class="question-counter">${completedCount} / 18</span>
+    </div>
+    <div class="card fade-in-up">
+      <div class="shop-badge"><span class="dot"></span><span>Shop ${String(currentShopId).padStart(2,'0')}</span></div>
+      <div class="result-title correct-text" style="margin-bottom:10px;">Already Completed ✓</div>
+      <p style="font-family:'Crimson Text',serif; font-size:1rem; color:var(--text-muted); line-height:1.8; font-style:italic;">
+        You have already answered this shop's question correctly.<br>
+        The letter <strong class="gold-text">${questionData.letter}</strong> has been added to your scroll.
+      </p>
+      <div id="countdown-wrap" style="margin-top:18px;">
+        <p style="font-family:'Crimson Text',serif;font-style:italic;font-size:0.88rem;color:var(--text-muted);text-align:center;margin-bottom:6px;">
+          Returning to scanner in <span id="countdown-num">5</span>s…
+        </p>
+        <div style="width:100%;height:4px;background:rgba(90,60,18,0.35);border-radius:2px;overflow:hidden;border:1px solid var(--border-dim);">
+          <div id="countdown-bar" style="height:100%;width:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold-bright));border-radius:2px;transition:width 5s linear;"></div>
+        </div>
+        <button class="btn-home" onclick="window.location.href='index.html'" style="margin-top:10px;">← Back to Scanner Now</button>
+      </div>
+    </div>
+  `;
+  startCountdown(REDIRECT_DELAY, goHome);
 }
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-function initializeApp() {
-    renderProgress();
-
-    // Support direct URL access (e.g. testing in browser)
-    const shopId = new URLSearchParams(window.location.search).get('shop');
-    if (shopId && quizData[shopId] && !unlockedShops.includes(shopId)) {
-        showQuiz(shopId);
-    }
+// ---- Error screen --------------------------------------------
+function showError(msg) {
+  document.body.innerHTML = `
+    <div class="error-wrapper">
+      <div class="error-icon">⚠</div>
+      <div class="error-title">Error</div>
+      <div class="error-sub">${msg}</div>
+      <div style="margin-top:20px; width:100%; max-width:280px;">
+        <button class="btn-home" onclick="window.location.href='index.html'">← Back to Scanner</button>
+      </div>
+    </div>
+  `;
 }
-
-initializeApp();

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mystery Journey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="app-header">
+        <span class="app-logo">ミステリージャーニー</span>
+        <span class="question-counter" id="question-num">0 / 18</span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+      </div>
+
+      <!-- Shop badge -->
+      <div class="shop-badge">
+        <span class="dot"></span>
+        <span id="shop-badge-text">Shop ??</span>
+      </div>
+
+      <!-- Question card -->
+      <div class="card fade-in-up">
+
+        <p class="question-label">― Question ―</p>
+        <p class="question-text" id="question-text">Loading…</p>
+
+        <!-- Choices — built by app.js -->
+        <ul class="choices-list" id="choices-list"></ul>
+
+        <!-- 1. Star rating BEFORE the confirm button -->
+        <div class="rating-section" id="rating-section">
+          <p class="rating-label">模擬店の満足度調査<span class="rating-optional">(任意)</span></p>
+          <div class="stars-row">
+            <label class="star-label" data-value="1" for="star1">★</label>
+            <input class="star-input" type="radio" id="star1" name="stars" value="1" />
+            <label class="star-label" data-value="2" for="star2">★</label>
+            <input class="star-input" type="radio" id="star2" name="stars" value="2" />
+            <label class="star-label" data-value="3" for="star3">★</label>
+            <input class="star-input" type="radio" id="star3" name="stars" value="3" />
+            <label class="star-label" data-value="4" for="star4">★</label>
+            <input class="star-input" type="radio" id="star4" name="stars" value="4" />
+            <label class="star-label" data-value="5" for="star5">★</label>
+            <input class="star-input" type="radio" id="star5" name="stars" value="5" />
+          </div>
+        </div>
+
+        <!-- 2. Confirm Answer button -->
+        <button class="btn-primary" id="submit-btn" disabled style="margin-top: 6px;">
+          決定
+        </button>
+
+        <!-- Result panel — shown after answer -->
+        <div class="result-panel" id="result-panel"></div>
+
+        <!-- Countdown bar — shown after answer -->
+        <div id="countdown-wrap" style="display:none; margin-top:14px;">
+          <p style="
+            font-family:'Crimson Text',serif;
+            font-style:italic;
+            font-size:0.88rem;
+            color:var(--text-muted);
+            text-align:center;
+            margin-bottom:6px;
+          ">Returning to scanner in <span id="countdown-num">5</span>s…</p>
+          <div style="
+            width:100%;
+            height:4px;
+            background:rgba(90,60,18,0.35);
+            border-radius:2px;
+            overflow:hidden;
+            border:1px solid var(--border-dim);
+          ">
+            <div id="countdown-bar" style="
+              height:100%;
+              width:100%;
+              background:linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+              border-radius:2px;
+              transition:width 1s linear;
+            "></div>
+          </div>
+          <!-- Manual early-return button -->
+          <button class="btn-home" onclick="goHome()" style="margin-top:10px;">
+            ← Back to Scanner Now
+          </button>
+        </div>
+
+      </div><!-- /card -->
+
+      <div class="spacer"></div>
+
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

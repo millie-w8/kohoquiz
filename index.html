@@ -1,38 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>広報委員会クイズラリー</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/html5-qrcode"></script> 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mystery Journey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <div class="container" style="margin-top: 4rem;">
-        <h1 class="neon-title">QRコードをスキャンして<br>
-            クイズに答えよう！</h1>
-        
-        <div id="scanner-section">
-            <button id="start-scan-btn" class="neon-btn">スキャンする</button>
-            <div id="reader" style="display: none;"></div>
+
+  <!-- ── Page layout ─────────────────────────────────────── -->
+  <div class="page-wrapper">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="app-header">
+        <span class="app-logo">ミステリージャーニー</span>
+        <span class="question-counter" id="progress-label">0 / 18</span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+      </div>
+
+      <h1 class="entry-title" style="margin-bottom:4px;">Mystery Journey</h1>
+      <p class="entry-sub">文化祭 2026</p>
+
+      <!-- ── Scanner section ─────────────────────────── -->
+      <div id="scanner-section">
+
+        <!-- Camera view — FIX 4: close button inside scanner UI -->
+        <div id="scanner-open-wrap">
+          <div class="scanner-wrapper" id="scanner-wrapper">
+            <video id="qr-video" playsinline muted autoplay></video>
+            <canvas id="qr-canvas" style="display:none;"></canvas>
+            <div class="scanner-corners">
+              <span class="scanner-corner-extra"></span>
+              <div class="scanner-sweep" id="scanner-sweep"></div>
+            </div>
+            <!-- FIX 4: Close scanner button overlaid on camera -->
+            <button id="close-scanner-btn" onclick="closeScanner()" aria-label="Close scanner" style="
+              position: absolute;
+              top: 10px; right: 10px;
+              z-index: 10;
+              background: rgba(20,12,4,0.72);
+              border: 1px solid var(--border-mid);
+              border-radius: 50%;
+              width: 36px; height: 36px;
+              color: var(--gold-mid);
+              font-size: 1.1rem;
+              line-height: 1;
+              cursor: pointer;
+              display: flex; align-items: center; justify-content: center;
+              touch-action: manipulation;
+            ">✕</button>
+          </div>
+
+          <p class="scanner-status" id="scanner-status">QRコードを読み込んで！</p>
         </div>
 
-        <div id="quiz-section" style="display: none;">
-            <h2 id="shop-name">Shop Name</h2>
-            <p id="question-text">Loading question...</p>
-            <div id="options-container" class="options-grid"></div>
-            <p id="feedback-message"></p>
+        <!-- Open scanner button — shown when camera is closed -->
+        <div id="scanner-closed-wrap" style="display:none; text-align:center; margin-bottom:14px;">
+          <button class="btn-primary" onclick="openScanner()" style="max-width:280px;">
+            📷 &nbsp;Open Scanner
+          </button>
         </div>
+      </div><!-- /scanner-section -->
 
-        <div class="progress-section">
-            <h3 style="margin-bottom: 1.5rem; margin-top: 1.5rem; ">キーワード:</h3>
-            <div id="letters-container" class="letters-grid"></div>
-            <p id="completion-message" class="neon-success" style="display: none;">
-                クイズコンプリート！<br>
-                すべての文字をアンロックしました。
-            </p>
-        </div>
+      <div class="spacer"></div>
+
+      <!-- FIX 2: Scroll of Letters lives on index.html -->
+      <div class="keyword-box" id="keyword-box">
+        <div class="keyword-box-title">― キーワード ―</div>
+        <div id="letters-container"></div>
+      </div>
+
+      <div class="spacer"></div>
+
     </div>
-    <script src="app.js"></script>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────── -->
+  <script src="db.js"></script>
+  <script>
+    // ── Question letter map (shopId → letter) ──────────────
+    // FIX 3: order of visits doesn't matter — we look up by shopId
+    const SHOP_LETTER = {
+      1:'あ', 2:'か', 3:'つ', 4:'き', 5:'に', 6:'さ', 7:'け',
+      8:'わ', 9:'れ', 10:'ら', 11:'の', 12:'は', 13:'ま', 14:'ゆ',
+      15:'う', 16:'5', 17:'1', 18:'7'
+    };
+
+    // Row layout spec
+    const LETTER_ROWS = [
+      { shopIds: [16, 17, 18], separatorAfter: 16, separator: '／' },
+      { shopIds: [1, 2, 3, 4, 5, 6, 7],            trailingChar: '、' },
+      { shopIds: [8, 9, 10, 11, 12, 13, 14, 15] },
+    ];
+
+    // ── State ─────────────────────────────────────────────
+    let scanning    = false;
+    let lastScan    = 0;
+    const COOLDOWN  = 2000;
+    let cameraStream = null;
+
+    const videoEl    = document.getElementById('qr-video');
+    const canvasEl   = document.getElementById('qr-canvas');
+    const statusEl   = document.getElementById('scanner-status');
+    const ctx        = canvasEl.getContext('2d');
+
+    // ── On load ────────────────────────────────────────────
+    const state = QuizDB.getPlayerState();
+
+    if (state.completed) {
+      window.location.replace('completion.html');
+    }
+
+    // Update progress header
+    updateProgress();
+
+    // Render the scroll of letters (random order supported)
+    renderKeywordBox();
+
+    // Auto-open camera on load
+    openScanner();
+
+    // ── Progress display ───────────────────────────────────
+    function updateProgress() {
+      const n = state.completedShops.length;
+      document.getElementById('progress-label').textContent = `${n} / 18`;
+      document.getElementById('progress-fill').style.width  = (n / 18 * 100) + '%';
+    }
+
+    // ── Keyword box ─────────────────────────────────────────
+    // FIX 3: revealed state is looked up by shopId index, not by visit order
+    function renderKeywordBox() {
+      const container = document.getElementById('letters-container');
+      container.innerHTML = '';
+
+      LETTER_ROWS.forEach(rowDef => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'letter-row';
+
+        rowDef.shopIds.forEach(shopId => {
+          // revealedLetters[shopId - 1] is set when that shop is completed
+          const isRevealed = state.revealedLetters[shopId - 1] !== null;
+
+          const tile = document.createElement('div');
+          tile.className = isRevealed ? 'letter-tile unlocked' : 'letter-tile locked';
+          if (isRevealed) tile.textContent = SHOP_LETTER[shopId];
+          tile.title = `Shop ${shopId}`;
+          rowEl.appendChild(tile);
+
+          if (rowDef.separatorAfter && shopId === rowDef.separatorAfter) {
+            const sep = document.createElement('span');
+            sep.className = 'row-separator';
+            sep.textContent = rowDef.separator;
+            rowEl.appendChild(sep);
+          }
+        });
+
+        if (rowDef.trailingChar) {
+          const trail = document.createElement('span');
+          trail.className = 'row-trailing';
+          trail.textContent = rowDef.trailingChar;
+          rowEl.appendChild(trail);
+        }
+
+        container.appendChild(rowEl);
+      });
+    }
+
+    // ── Camera open / close ────────────────────────────────
+
+    async function openScanner() {
+      document.getElementById('scanner-open-wrap').style.display = 'block';
+      document.getElementById('scanner-closed-wrap').style.display = 'none';
+      scanning = true;
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width:  { ideal: 640 },
+            height: { ideal: 640 }
+          }
+        });
+        videoEl.srcObject = cameraStream;
+        videoEl.play();
+        requestAnimationFrame(tick);
+        statusEl.textContent = 'QRコードを読み込んで！';
+      } catch (err) {
+        statusEl.textContent = 'Camera unavailable — use manual entry below.';
+        document.getElementById('scanner-sweep').style.display = 'none';
+        console.warn('Camera error:', err);
+      }
+    }
+
+    // FIX 4: close scanner, stop camera, show "Open Scanner" button
+    function closeScanner() {
+      scanning = false;
+      stopCamera();
+      document.getElementById('scanner-open-wrap').style.display = 'none';
+      document.getElementById('scanner-closed-wrap').style.display = 'block';
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      videoEl.srcObject = null;
+    }
+
+    // ── Decode loop ────────────────────────────────────────
+    function tick() {
+      if (!scanning) return;
+
+      if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+        const w = videoEl.videoWidth;
+        const h = videoEl.videoHeight;
+        if (w === 0 || h === 0) { requestAnimationFrame(tick); return; }
+
+        canvasEl.width  = w;
+        canvasEl.height = h;
+        ctx.drawImage(videoEl, 0, 0, w, h);
+
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+
+        if (code && Date.now() - lastScan > COOLDOWN) {
+          lastScan = Date.now();
+          handleQRResult(code.data);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // ── Handle scanned result ──────────────────────────────
+    function handleQRResult(data) {
+      let shopId = null;
+
+      try {
+        const url = new URL(data);
+        shopId = parseInt(url.searchParams.get('shop'), 10);
+      } catch {
+        const n = parseInt(data, 10);
+        if (n >= 1 && n <= 18) shopId = n;
+      }
+
+      if (!shopId || shopId < 1 || shopId > 18) {
+        statusEl.textContent = 'QR code not recognised. Try another shop.';
+        return;
+      }
+
+      scanning = false;
+      statusEl.textContent = `Shop ${shopId} detected — opening quest…`;
+      stopCamera();
+
+      setTimeout(() => {
+        window.location.href = `quiz.html?shop=${shopId}`;
+      }, 500);
+    }
+  </script>
 </body>
 </html>

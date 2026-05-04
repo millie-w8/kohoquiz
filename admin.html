@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Mystery Journey Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="admin-header">
+        <p style="font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:0.22em; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Mystery Journey — Admin</p>
+        <h1 class="admin-title">Data Dashboard</h1>
+      </div>
+
+      <div class="admin-stats-grid" id="stats-grid"></div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <p class="letters-label" style="margin-bottom:16px;">Per-Shop Results</p>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Shop</th><th>Letter</th><th>✓ Correct</th><th>✗ Wrong</th><th>Avg Stars</th>
+              </tr>
+            </thead>
+            <tbody id="shop-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <p class="letters-label" style="margin-bottom:16px;">Full Response Log</p>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Shop</th><th>Result</th><th>Stars</th><th>Attempts</th>
+              </tr>
+            </thead>
+            <tbody id="log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:40px;">
+        <button class="export-btn" onclick="exportData()">⬇ Export CSV</button>
+        <button class="btn-secondary" onclick="location.reload()">↺ Refresh</button>
+        <button class="btn-danger" onclick="confirmClear()">✕ Clear All Data</button>
+      </div>
+
+      <div class="card" style="margin-bottom:24px; border-color:var(--border-bright);">
+        <p class="rating-label" style="margin-bottom:8px;">⚙ Developer Tools</p>
+        <p style="font-family:'Crimson Text',serif; font-style:italic; font-size:0.9rem; color:var(--text-muted); margin-bottom:14px; line-height:1.6;">
+          Use during testing only — not during the festival.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn-secondary" onclick="resetPlayer()">Reset Player Progress</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script>
+    const SHOP_LETTERS = ["あ","か","つ","き","に","さ","け","わ","れ","ら","の","は","ま","ゆ","う","0","5","1"];
+
+    function renderDashboard() {
+      const { total, correct, avgStars, byShop } = QuizDB.getAdminStats();
+      const results = QuizDB.getAllResults();
+
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Responses</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--correct);">${correct}</div><div class="stat-label">Correct Answers</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--wrong);">${total - correct}</div><div class="stat-label">Wrong Answers</div></div>
+        <div class="stat-card"><div class="stat-value">${avgStars}</div><div class="stat-label">Avg Star Rating</div></div>
+      `;
+
+      const shopTbody = document.getElementById('shop-tbody');
+      shopTbody.innerHTML = '';
+      for (let i = 1; i <= 18; i++) {
+        const data = byShop[i] || { correct: 0, wrong: 0, stars: [] };
+        const shopAvg = data.stars.length
+          ? (data.stars.reduce((a, b) => a + b, 0) / data.stars.length).toFixed(1)
+          : '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="shop-tag">Shop ${String(i).padStart(2,'0')}</span></td>
+          <td style="color:var(--gold-bright); font-family:'Noto Serif JP',serif; font-size:1.1rem;">${SHOP_LETTERS[i-1]}</td>
+          <td style="color:var(--correct);">${data.correct}</td>
+          <td style="color:var(--wrong);">${data.wrong}</td>
+          <td class="stars-display">${shopAvg !== '—' ? '★'.repeat(Math.round(parseFloat(shopAvg))) + ` (${shopAvg})` : '—'}</td>
+        `;
+        shopTbody.appendChild(tr);
+      }
+
+      const logTbody = document.getElementById('log-tbody');
+      logTbody.innerHTML = '';
+      if (!results.length) {
+        logTbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-muted); text-align:center; padding:24px; font-style:italic;">No records yet.</td></tr>`;
+      } else {
+        [...results].reverse().forEach(r => {
+          const date = new Date(r.timestamp);
+          const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+          const stars = r.stars ? '★'.repeat(r.stars) : '—';
+          const shopLabel = r.shopId === 0 ? 'OVERALL' : `Shop ${String(r.shopId).padStart(2,'0')}`;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="white-space:nowrap;">${dateStr}<br><span style="color:var(--text-muted);font-size:0.75rem;">${timeStr}</span></td>
+            <td><span class="shop-tag">${shopLabel}</span></td>
+            <td style="color:${r.correct ? 'var(--correct)' : 'var(--wrong)'};">${r.correct ? '✓ Correct' : '✗ Wrong'}</td>
+            <td class="stars-display">${stars}</td>
+            <td>${r.attempts || 1}</td>
+          `;
+          logTbody.appendChild(tr);
+        });
+      }
+    }
+
+    function exportData() {
+      const csv = QuizDB.exportCSV();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mystery-journey-results-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function confirmClear() {
+      if (confirm('Clear ALL recorded data? This cannot be undone.')) {
+        QuizDB.clearAllResults();
+        renderDashboard();
+      }
+    }
+
+    function resetPlayer() {
+      if (confirm('Reset all player progress?')) {
+        QuizDB.resetPlayerState();
+        alert('Player state reset.');
+      }
+    }
+
+    renderDashboard();
+  </script>
+</body>
+</html>

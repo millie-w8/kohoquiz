@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mystery Journey — Quest Complete</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="completion-wrapper">
+
+    <p class="completion-subtitle">18問全問正解</p>
+    <h1 class="completion-title">ミッション達成</h1>
+
+    <p style="
+      font-family:'Crimson Text',serif;
+      font-style:italic;
+      font-size:0.95rem;
+      color:var(--text-muted);
+      margin-bottom:26px;
+      max-width:320px;
+      line-height:1.75;
+      text-align:center;
+    ">
+      君のおかげで<br>
+      隠されたメッセージが明らかになった！<br>
+    </p>
+
+    <!-- Final answer scroll -->
+    <div class="final-answer-box" style="max-width:var(--max-width); width:100%;">
+      <div class="final-answer-label">キーワード</div>
+      <div class="final-answer-text" id="final-answer-text">…</div>
+    </div>
+
+    <!-- Keyword box — all letters revealed -->
+    <div class="keyword-box" style="max-width:var(--max-width); width:100%; margin-bottom:20px;">
+      <div class="keyword-box-title">― Complete Scroll ―</div>
+      <div id="letters-container"></div>
+    </div>
+
+    <!-- Overall rating -->
+    <div class="completion-rating-box">
+      <p class="rating-label" style="text-align:center; margin-bottom:10px;">
+        文化祭はいかがでしたか？
+        <span class="rating-optional">(任意)</span>
+      </p>
+      <div class="stars-row" style="justify-content:center;">
+        <label class="star-label" data-value="1" for="cs1">★</label>
+        <input class="star-input" type="radio" id="cs1" name="cstars" value="1" />
+        <label class="star-label" data-value="2" for="cs2">★</label>
+        <input class="star-input" type="radio" id="cs2" name="cstars" value="2" />
+        <label class="star-label" data-value="3" for="cs3">★</label>
+        <input class="star-input" type="radio" id="cs3" name="cstars" value="3" />
+        <label class="star-label" data-value="4" for="cs4">★</label>
+        <input class="star-input" type="radio" id="cs4" name="cstars" value="4" />
+        <label class="star-label" data-value="5" for="cs5">★</label>
+        <input class="star-input" type="radio" id="cs5" name="cstars" value="5" />
+      </div>
+      <button class="btn-primary" id="rate-btn" style="margin-top:14px;">決定</button>
+      <p id="rating-saved" style="
+        display:none;
+        text-align:center;
+        color:var(--correct);
+        font-family:'Crimson Text',serif;
+        font-style:italic;
+        margin-top:10px;
+        font-size:0.95rem;
+      ">✦ ありがとございました！</p>
+    </div>
+
+    <p style="
+      font-family:'Crimson Text',serif;
+      font-style:italic;
+      font-size:0.88rem;
+      color:var(--text-muted);
+      max-width:300px;
+      line-height:1.9;
+      text-align:center;
+    ">
+      この画面をどこどこに見せると<br>無料で模擬店を体験できるよ ✦
+    </p>
+  </div>
+
+  <script src="db.js"></script>
+  <script>
+    // ---- Letter layout (same as app.js) -------------------
+    const QUESTIONS_COMPLETION = [
+      { shopId:1,  letter:'あ' }, { shopId:2,  letter:'か' },
+      { shopId:3,  letter:'つ' }, { shopId:4,  letter:'き' },
+      { shopId:5,  letter:'に' }, { shopId:6,  letter:'さ' },
+      { shopId:7,  letter:'け' }, { shopId:8,  letter:'わ' },
+      { shopId:9,  letter:'れ' }, { shopId:10, letter:'ら' },
+      { shopId:11, letter:'の' }, { shopId:12, letter:'は' },
+      { shopId:13, letter:'ま' }, { shopId:14, letter:'ゆ' },
+      { shopId:15, letter:'う' }, { shopId:16, letter:'5'  },
+      { shopId:17, letter:'1'  }, { shopId:18, letter:'7'  },
+    ];
+
+    const LETTER_ROWS = [
+      { shopIds: [16, 17, 18], separatorAfter: 16, separator: '／' },
+      { shopIds: [1, 2, 3, 4, 5, 6, 7],            trailingChar: '、' },
+      { shopIds: [8, 9, 10, 11, 12, 13, 14, 15] },
+    ];
+
+    // ---- Guard: must have completed all 18 ----------------
+    const state = QuizDB.getPlayerState();
+
+    if (!state.completed && state.completedShops.length < 18) {
+      document.querySelector('.completion-wrapper').innerHTML = `
+        <div class="error-icon" style="font-size:2.8rem; color:var(--wrong); margin-bottom:14px;">⚠</div>
+        <div style="font-family:'Cinzel',serif; font-size:1rem; color:var(--wrong); letter-spacing:0.1em; margin-bottom:10px;">Scroll Incomplete</div>
+        <p style="font-family:'Crimson Text',serif; font-style:italic; color:var(--text-muted); font-size:0.95rem; max-width:280px; text-align:center; line-height:1.7;">
+          You have not yet visited all 18 shops.<br>
+          ${18 - state.completedShops.length} shop(s) remain on your journey.
+        </p>
+        <div style="margin-top:20px; width:100%; max-width:280px;">
+          <button class="btn-home" onclick="window.location.href='index.html'">← Back to Scanner</button>
+        </div>
+      `;
+    } else {
+
+      // Final answer: rows in reading order (first row last, etc.)
+      // Spell it out: 5／17  あかつきにさけ、われらのはまゆう
+      const answerStr = '5／17　あかつきにさけ、われらのはまゆう';
+      document.getElementById('final-answer-text').textContent = answerStr;
+
+      // Render keyword box — all unlocked
+      renderKeywordBoxComplete();
+
+      // Confetti
+      launchConfetti();
+
+      // Star rating
+      document.querySelectorAll('.star-label').forEach(label => {
+        label.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          const val = parseInt(label.dataset.value);
+          document.getElementById(label.getAttribute('for')).checked = true;
+          highlightStars(val);
+        }, { passive: false });
+        label.addEventListener('click', () => highlightStars(parseInt(label.dataset.value)));
+      });
+
+      document.getElementById('rate-btn').addEventListener('click', () => {
+        const checked = document.querySelector('.star-input:checked');
+        if (!checked) return;
+        const stars = parseInt(checked.value);
+        const s2 = QuizDB.getPlayerState();
+        s2.completionRating = stars;
+        QuizDB.savePlayerState(s2);
+        QuizDB.saveResult({ shopId: 0, questionIndex: -1, correct: true, stars, attempts: 1 });
+        document.getElementById('rating-saved').style.display = 'block';
+        document.getElementById('rate-btn').disabled = true;
+      });
+    }
+
+    function renderKeywordBoxComplete() {
+      const container = document.getElementById('letters-container');
+      container.innerHTML = '';
+
+      LETTER_ROWS.forEach((rowDef, rowIdx) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'letter-row';
+
+        rowDef.shopIds.forEach((shopId, idx) => {
+          const qData = QUESTIONS_COMPLETION.find(q => q.shopId === shopId);
+
+          const tile = document.createElement('div');
+          tile.className = 'letter-tile unlocked';
+          tile.textContent = qData.letter;
+          tile.title = `Shop ${shopId}`;
+          // Stagger animation
+          tile.style.animationDelay = `${(rowIdx * 8 + idx) * 0.07}s`;
+          tile.classList.add('just-revealed');
+          rowEl.appendChild(tile);
+
+          if (rowDef.separatorAfter && shopId === rowDef.separatorAfter) {
+            const sep = document.createElement('span');
+            sep.className = 'row-separator';
+            sep.textContent = rowDef.separator;
+            rowEl.appendChild(sep);
+          }
+        });
+
+        if (rowDef.trailingChar) {
+          const trail = document.createElement('span');
+          trail.className = 'row-trailing';
+          trail.textContent = rowDef.trailingChar;
+          rowEl.appendChild(trail);
+        }
+
+        container.appendChild(rowEl);
+      });
+    }
+
+    function highlightStars(upTo) {
+      document.querySelectorAll('.star-label').forEach(label => {
+        label.classList.toggle('lit', parseInt(label.dataset.value) <= upTo);
+      });
+    }
+
+    // Warm gold confetti
+    function launchConfetti() {
+      const colors = ['#d4a017','#b8891a','#f0dfa8','#7a5c22','#e8c87a','#fffbe6'];
+      for (let i = 0; i < 65; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-particle';
+        p.style.left              = Math.random() * 100 + 'vw';
+        p.style.top               = '-12px';
+        p.style.background        = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDuration = (2.5 + Math.random() * 3) + 's';
+        p.style.animationDelay    = (Math.random() * 2.2) + 's';
+        p.style.width             = (5 + Math.random() * 7) + 'px';
+        p.style.height            = (5 + Math.random() * 7) + 'px';
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => p.remove());
+      }
+    }
+
+    // Block back navigation
+    history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', () => {
+      history.pushState(null, '', window.location.href);
+    });
+  </script>
+</body>
+</html>

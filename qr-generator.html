@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Generator — Mystery Journey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="container">
+
+      <div class="admin-header">
+        <p style="font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:0.22em; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Mystery Journey — Setup</p>
+        <h1 class="admin-title">QR Code Generator</h1>
+      </div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <p class="rating-label" style="margin-bottom:10px;">Base URL (where your app is hosted)</p>
+        <p style="font-family:'Crimson Text',serif; font-style:italic; font-size:0.95rem; color:var(--text-muted); margin-bottom:12px; line-height:1.7;">
+          Enter the full URL where <code style="color:var(--gold-mid); font-style:normal;">index.html</code> is accessible.<br>
+          Example: <code style="color:var(--correct); font-style:normal;">http://192.168.1.50:5500/index.html</code> (VS Code Live Server)
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <input
+            type="text"
+            id="base-url"
+            placeholder="http://localhost:5500/index.html"
+            style="
+              flex:1; min-width:220px;
+              background:rgba(40,25,8,0.8);
+              border:1px solid var(--border-mid);
+              border-radius:var(--radius-sm);
+              color:var(--text-main);
+              font-family:'Crimson Text',serif;
+              font-size:1rem;
+              padding:10px 14px;
+              outline:none;
+            "
+          />
+          <button class="btn-primary" onclick="generateAll()" style="max-width:180px;">
+            Generate QR Codes
+          </button>
+        </div>
+      </div>
+
+      <div id="qr-grid" style="
+        display:grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap:16px;
+        margin-bottom:40px;
+      "></div>
+
+      <p style="font-family:'Crimson Text',serif; font-style:italic; font-size:0.9rem; color:var(--text-muted); line-height:1.9;">
+        ✦ Print each card and place it at the corresponding shop.<br>
+        ✦ Use VS Code Live Server (right-click index.html → "Open with Live Server") for local hosting.<br>
+        ✦ Ensure all devices are on the same Wi-Fi network when hosting locally.
+      </p>
+
+    </div>
+  </div>
+
+  <script>
+    const SHOP_LETTERS = ["あ","か","つ","き","に","さ","け","わ","れ","ら","の","は","ま","ゆ","う","0","5","1"];
+
+    function generateAll() {
+      let base = document.getElementById('base-url').value.trim();
+      if (!base) base = window.location.href.replace('qr-generator.html', 'index.html');
+      base = base.replace(/\/+$/, '');
+
+      const grid = document.getElementById('qr-grid');
+      grid.innerHTML = '';
+
+      for (let i = 1; i <= 18; i++) {
+        const url = `${base}?shop=${i}`;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card';
+        wrapper.style.textAlign = 'center';
+        wrapper.style.padding = '18px 14px';
+
+        wrapper.innerHTML = `
+          <div class="shop-badge" style="margin:0 auto 12px; display:inline-flex; justify-content:center;">
+            <span class="dot"></span>
+            <span>Shop ${String(i).padStart(2,'0')}</span>
+          </div>
+          <div id="qr-${i}" style="display:inline-block; background:#fff; padding:8px; border-radius:6px;"></div>
+          <p style="margin-top:10px; font-family:'Cinzel',serif; font-size:0.6rem; color:var(--text-muted); letter-spacing:0.1em;">
+            Letter: <span style="color:var(--gold-bright); font-family:'Noto Serif JP',serif; font-size:1.1rem;">${SHOP_LETTERS[i-1]}</span>
+          </p>
+          <p style="font-family:'Crimson Text',serif; font-size:0.65rem; color:var(--text-muted); word-break:break-all; margin-top:4px;">${url}</p>
+        `;
+        grid.appendChild(wrapper);
+
+        new QRCode(document.getElementById(`qr-${i}`), {
+          text: url,
+          width: 140,
+          height: 140,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const defaultBase = window.location.href.replace('qr-generator.html', 'index.html');
+      document.getElementById('base-url').value = defaultBase;
+      generateAll();
+    });
+  </script>
+</body>
+</html>
