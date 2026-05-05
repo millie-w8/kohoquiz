@@ -291,7 +291,7 @@ h1, h2, h3 {
    ============================================================ */
 .question-label {
   font-family: 'Cinzel', serif;
-  font-size: 0.58rem;
+  font-size: 0.8rem;
   letter-spacing: 0.28em;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -424,7 +424,7 @@ h1, h2, h3 {
 
 .rating-label {
   font-family: 'Cinzel', serif;
-  font-size: 0.58rem;
+  font-size: 1rem;
   letter-spacing: 0.22em;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -459,7 +459,7 @@ h1, h2, h3 {
 .star-input { display: none; }
 
 .rating-optional {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   font-style: italic;
   margin-left: 4px;
