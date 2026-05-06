@@ -69,7 +69,38 @@
             📷 &nbsp;Open Scanner
           </button>
         </div>
-      </div><!-- /scanner-section -->
+      </div>
+      
+      <!-- ── Info buttons ──────────────────────────────── -->
+      <div class="info-btn-row">
+
+        <button class="info-btn" onclick="showInfo('rules')">
+          <span class="info-btn-icon">📜</span>
+          <span class="info-btn-label">ルール説明</span>
+        </button>
+
+        <button class="info-btn" onclick="showInfo('cautions')">
+          <span class="info-btn-icon">⚠</span>
+          <span class="info-btn-label">注意事項</span>
+        </button>
+
+        <button class="info-btn" onclick="showInfo('hints')">
+          <span class="info-btn-icon">💡</span>
+          <span class="info-btn-label">ヒント</span>
+        </button>
+
+      </div>
+
+      <!-- Info modal -->
+      <div class="info-modal-overlay" id="info-modal" onclick="closeInfo()">
+        <div class="info-modal-card" onclick="event.stopPropagation()">
+          <button class="info-modal-close" onclick="closeInfo()">✕</button>
+          <div class="info-modal-title" id="info-title"></div>
+          <div class="info-modal-body" id="info-body"></div>
+        </div>
+      </div>
+      
+      <!-- /scanner-section -->
 
       <div class="spacer"></div>
 
@@ -125,6 +156,50 @@
 
     // Render the scroll of letters (random order supported)
     renderKeywordBox();
+
+    // ── Info modal content — EDIT TEXT HERE ───────────────
+    const INFO_CONTENT = {
+      rules: {
+        title: '📜 ルール説明',
+        body: `
+          1. 18の店舗をVisitし、各QRコードをスキャンしてください。<br>
+          2. 各店舗で質問に正しく答えると文字が明らかになります。<br>
+          3. 18の文字を集め、隠されたメッセージを解読してください。<br>
+          4. 各店舗は一度だけ完了できます。<br>
+          5. 任意の順序で店舗を訪問できます。
+        `
+      },
+      cautions: {
+        title: '⚠ 注意事項',
+          body: `
+          · 他のプレイヤーと回答を共有しないでください。<br>
+          · 電話のバッテリーを充電したままにしてください — 全体を通して必要です。<br>
+          · 店舗の周囲の他のフェスティバル参加者に注意してください。<br>
+          · QRコードをスキャンしている間、店舗の入り口を塞がないでください。
+        `
+      },
+      hints: {
+        title: '💡 ヒント',
+        body: `
+          · Look carefully around each shop for clues to the answer.<br>
+          · The letters reveal a well-known Japanese phrase.<br>
+          · Numbers in the answer are also part of the message.<br>
+          · If you get stuck, try speaking to the shop staff.
+        `
+      }
+    };
+
+    function showInfo(key) {
+      const content = INFO_CONTENT[key];
+      document.getElementById('info-title').textContent = content.title;
+      document.getElementById('info-body').innerHTML    = content.body;
+      const modal = document.getElementById('info-modal');
+      modal.style.display = 'flex';
+    }
+
+    function closeInfo() {
+      document.getElementById('info-modal').style.display = 'none';
+    }
 
     // Auto-open camera on load
     openScanner();

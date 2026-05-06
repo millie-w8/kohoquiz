@@ -17,6 +17,7 @@
    12. Result Panel
    13. Keyword Box (Letter Reveal)
    14. QR Scanner Area
+   14b. INFO BUTTONS & MODAL
    15. Completion Screen
    16. Entry / Scan Screen
    17. Error Screen
@@ -916,6 +917,163 @@ h1, h2, h3 {
   -webkit-appearance: none;
 }
 
+/* ============================================================
+   14b. INFO BUTTONS & MODAL
+   ============================================================ */
+
+/* Row of 3 buttons */
+.info-btn-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+  margin-top: 3rem;;
+}
+
+.info-btn {
+  flex: 1;
+  min-height: var(--tap-min);
+  background: rgba(60, 40, 12, 0.55);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  color: var(--gold-mid);
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.18s, border-color 0.18s;
+  /* Stack icon above label */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+}
+
+.info-btn:active {
+  background: rgba(100, 68, 18, 0.45);
+  border-color: var(--gold-dim);
+}
+
+.info-btn .info-btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.info-btn .info-btn-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
+}
+
+/* Modal overlay — full screen dim */
+.info-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 6, 2, 0.82);
+  align-items: center;
+  justify-content: center;
+  padding: 24px var(--page-pad);
+}
+
+.info-modal-overlay.open {
+  display: flex;
+}
+
+/* Modal card */
+.info-modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-lg);
+  padding: 26px 20px 22px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 100, 0.07),
+    0 8px 32px rgba(0, 0, 0, 0.65);
+  /* Slide-up animation */
+  animation: fade-in-up 0.28s ease forwards;
+}
+
+/* Top shimmer line */
+.info-modal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12px; right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 160, 23, 0.22), transparent);
+  pointer-events: none;
+}
+
+/* Close button — top right corner */
+.info-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 4px;
+  /* Expand tap area without changing visible size */
+  margin: -4px;
+}
+
+.info-modal-close:active {
+  color: var(--gold-mid);
+}
+
+/* Modal title */
+.info-modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  margin-bottom: 14px;
+  padding-right: 24px; /* don't overlap close button */
+}
+
+/* Decorative rule under title */
+.info-modal-title::after {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-mid), transparent);
+  margin-top: 8px;
+}
+
+/* Modal body text */
+.info-modal-body {
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  color: var(--text-main);
+  line-height: 1.9;
+}
+
+/* Each line item inside modal body */
+.info-modal-body li {
+  padding-left: 1.2em;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.info-modal-body li::before {
+  content: '✦';
+  position: absolute;
+  left: 0;
+  color: var(--gold-dim);
+  font-size: 0.6rem;
+  top: 0.3em;
+}
 
 /* ============================================================
    15. COMPLETION SCREEN

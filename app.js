@@ -202,6 +202,9 @@ function renderQuiz(state) {
   el('question-text').textContent   = questionData.q;
 
   buildChoices();
+  // Hide star rating for shops that don't need it
+  const NO_RATING_SHOPS = [2, 5, 8, 13];
+  el('rating-section').style.display = NO_RATING_SHOPS.includes(currentShopId) ? 'none' : '';
 }
 
 // ---- Build choices -------------------------------------------
