@@ -16,18 +16,12 @@
     <p class="completion-subtitle">18問全問正解</p>
     <h1 class="completion-title">ミッション達成</h1>
 
-    <p style="
-      font-family:'Crimson Text',serif;
-      font-style:italic;
-      font-size:0.95rem;
-      color:var(--text-muted);
-      margin-bottom:26px;
-      max-width:320px;
-      line-height:1.75;
-      text-align:center;
-    ">
-      君のおかげで<br>
-      隠されたメッセージが明らかになった！<br>
+    <p class="completion-instructions">
+      君のおかげで隠されたキーワード ー<br>
+      今年の暁秀祭のスローガンが明らかになった！<br>
+    </p>
+    <p class="completion-instructions" style="margin-top: 1rem; margin-bottom: 2rem;">
+      この画面を3αか3Zの模擬店の受付に見せると<br>無料で模擬店を体験できるよ ✦
     </p>
 
     <!-- Final answer scroll -->
@@ -69,20 +63,8 @@
         font-style:italic;
         margin-top:10px;
         font-size:0.95rem;
-      ">✦ ありがとございました！</p>
+      ">✦ ありがとございました！ ✦</p>
     </div>
-
-    <p style="
-      font-family:'Crimson Text',serif;
-      font-style:italic;
-      font-size:0.88rem;
-      color:var(--text-muted);
-      max-width:300px;
-      line-height:1.9;
-      text-align:center;
-    ">
-      この画面をどこどこに見せると<br>無料で模擬店を体験できるよ ✦
-    </p>
   </div>
 
   <script src="db.js"></script>
@@ -108,20 +90,6 @@
 
     // ---- Guard: must have completed all 18 ----------------
     const state = QuizDB.getPlayerState();
-
-    if (!state.completed && state.completedShops.length < 18) {
-      document.querySelector('.completion-wrapper').innerHTML = `
-        <div class="error-icon" style="font-size:2.8rem; color:var(--wrong); margin-bottom:14px;">⚠</div>
-        <div style="font-family:'Cinzel',serif; font-size:1rem; color:var(--wrong); letter-spacing:0.1em; margin-bottom:10px;">Scroll Incomplete</div>
-        <p style="font-family:'Crimson Text',serif; font-style:italic; color:var(--text-muted); font-size:0.95rem; max-width:280px; text-align:center; line-height:1.7;">
-          You have not yet visited all 18 shops.<br>
-          ${18 - state.completedShops.length} shop(s) remain on your journey.
-        </p>
-        <div style="margin-top:20px; width:100%; max-width:280px;">
-          <button class="btn-home" onclick="window.location.href='index.html'">← Back to Scanner</button>
-        </div>
-      `;
-    } else {
 
       // Final answer: rows in reading order (first row last, etc.)
       // Spell it out: 5／17  あかつきにさけ、われらのはまゆう
@@ -156,7 +124,6 @@
         document.getElementById('rating-saved').style.display = 'block';
         document.getElementById('rate-btn').disabled = true;
       });
-    }
 
     function renderKeywordBoxComplete() {
       const container = document.getElementById('letters-container');
