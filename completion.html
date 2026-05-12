@@ -21,7 +21,8 @@
       今年の暁秀祭のスローガンが明らかになった！<br>
     </p>
     <p class="completion-instructions" style="margin-top: 1rem; margin-bottom: 2rem;">
-      この画面を3αか3Zの模擬店の受付に見せると<br>無料で模擬店を体験できるよ ✦
+      この画面を3α「謎解きはタイムスリップのあとで」（2階特別教室1,2）もしくは3Z「Area3Z」（1階110・111番教室）<br>
+      の受付に見せると無料で模擬店を体験できるよ ✦
     </p>
 
     <!-- Final answer scroll -->
@@ -65,10 +66,36 @@
         font-size:0.95rem;
       ">✦ ありがとございました！ ✦</p>
     </div>
+    <!-- Proceed to thank-you — one-way door -->
+    <div style="margin-top: 28px; width: 100%; max-width: var(--max-width);">
+      <button class="btn-primary" onclick="confirmFinish()" style="max-width: var(--max-width);">
+        使用済み
+      </button>
+    </div>
   </div>
 
   <script src="db.js"></script>
   <script>
+    // ---- Guard -----------------------------------------------
+    // If already proceeded to thank-you, block access entirely.
+    const state = QuizDB.getPlayerState();
+    if (state.thanked) {
+      document.body.innerHTML = `
+        <div class="error-wrapper">
+          <div class="error-icon">🔒</div>
+          <div class="error-title" style="font-family:'Cinzel',serif; color:var(--wrong);">
+            既に完了済みです
+          </div>
+          <div class="error-sub">
+            この画面には再度アクセスできません。<br>ご参加ありがとうございました。✦
+          </div>
+        </div>
+      `;
+      // Hard-block navigation too
+      history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', () => history.pushState(null, '', window.location.href));
+      throw new Error('Access blocked'); // stop rest of script from running
+    }
     // ---- Letter layout (same as app.js) -------------------
     const QUESTIONS_COMPLETION = [
       { shopId:1,  letter:'あ' }, { shopId:2,  letter:'か' },
@@ -87,10 +114,6 @@
       { shopIds: [1, 2, 3, 4, 5, 6, 7],            trailingChar: '、' },
       { shopIds: [8, 9, 10, 11, 12, 13, 14, 15] },
     ];
-
-    // ---- Guard: must have completed all 18 ----------------
-    const state = QuizDB.getPlayerState();
-
       // Final answer: rows in reading order (first row last, etc.)
       // Spell it out: 5／17  あかつきにさけ、われらのはまゆう
       const answerStr = '5／17　あかつきにさけ、われらのはまゆう';
