@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   currentShopId = parseInt(params.get('shop'), 10);
 
   if (!currentShopId || currentShopId < 1 || currentShopId > 18) {
-    showError('Invalid shop QR code. Please scan a valid QR code at one of the shops.');
+    showError('無効な QR コードです。該当ポスターのQRコードをスキャンしてください。');
     return;
   }
 
@@ -299,9 +299,9 @@ function handleCorrect() {
   panel.innerHTML = `
     <div class="result-icon">✦</div>
     <div class="result-title correct-text">Correct!</div>
-    <div class="result-subtitle">A hidden letter has been unveiled.</div>
+    <div class="result-subtitle">キーワードが一文字現れた！</div>
     <div class="revealed-letter-spotlight">
-      Letter revealed:
+      現れたキーワード1文字：
       <div class="revealed-letter-char">${questionData.letter}</div>
     </div>
   `;
@@ -323,8 +323,8 @@ function handleWrong() {
     <div class="result-icon">✗</div>
     <div class="result-title wrong-text">Incorrect</div>
     <div class="result-subtitle">
-      That was not the right answer.<br>
-      Scan this shop's QR code again to retry.
+      不正解<br>
+      もう一度QRコードをスキャンして、再挑戦してみよう。
     </div>
   `;
 
@@ -400,19 +400,19 @@ function showAlreadyAnswered(state) {
     </div>
     <div class="card fade-in-up">
       <div class="shop-badge"><span class="dot"></span><span>Shop ${String(currentShopId).padStart(2,'0')}</span></div>
-      <div class="result-title correct-text" style="margin-bottom:10px;">Already Completed ✓</div>
+      <div class="result-title correct-text" style="margin-bottom:10px;">解答済み ✓</div>
       <p style="font-family:'Crimson Text',serif; font-size:1rem; color:var(--text-muted); line-height:1.8; font-style:italic;">
-        You have already answered this shop's question correctly.<br>
-        The letter <strong class="gold-text">${questionData.letter}</strong> has been added to your scroll.
+        すでにこの問題に正解しています。<br>
+        キーワード <strong class="gold-text">${questionData.letter}</strong> に文字が追加されました。
       </p>
       <div id="countdown-wrap" style="margin-top:18px;">
         <p style="font-family:'Crimson Text',serif;font-style:italic;font-size:0.88rem;color:var(--text-muted);text-align:center;margin-bottom:6px;">
-          Returning to scanner in <span id="countdown-num">5</span>s…
+          ホーム画面に戻るまで <span id="countdown-num">5</span>s…
         </p>
         <div style="width:100%;height:4px;background:rgba(90,60,18,0.35);border-radius:2px;overflow:hidden;border:1px solid var(--border-dim);">
           <div id="countdown-bar" style="height:100%;width:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold-bright));border-radius:2px;transition:width 5s linear;"></div>
         </div>
-        <button class="btn-home" onclick="window.location.href='index.html'" style="margin-top:10px;">← Back to Scanner Now</button>
+        <button class="btn-home" onclick="window.location.href='index.html'" style="margin-top:10px;">← ホーム画面に戻る</button>
       </div>
     </div>
   `;
@@ -424,10 +424,10 @@ function showError(msg) {
   document.body.innerHTML = `
     <div class="error-wrapper">
       <div class="error-icon">⚠</div>
-      <div class="error-title">Error</div>
+      <div class="error-title">エラー</div>
       <div class="error-sub">${msg}</div>
       <div style="margin-top:20px; width:100%; max-width:280px;">
-        <button class="btn-home" onclick="window.location.href='index.html'">← Back to Scanner</button>
+        <button class="btn-home" onclick="window.location.href='index.html'">← ホーム画面に戻る</button>
       </div>
     </div>
   `;

@@ -44,18 +44,10 @@
             </div>
             <!-- FIX 4: Close scanner button overlaid on camera -->
             <button id="close-scanner-btn" onclick="closeScanner()" aria-label="Close scanner" style="
-              position: absolute;
-              top: 10px; right: 10px;
-              z-index: 10;
-              background: rgba(20,12,4,0.72);
-              border: 1px solid var(--border-mid);
-              border-radius: 50%;
-              width: 36px; height: 36px;
-              color: var(--gold-mid);
-              font-size: 1.1rem;
-              line-height: 1;
-              cursor: pointer;
-              display: flex; align-items: center; justify-content: center;
+              position: absolute; top: 10px; right: 10px; z-index: 10;
+              background: rgba(20,12,4,0.72); border: 1px solid var(--border-mid);
+              border-radius: 50%; width: 36px; height: 36px; color: var(--gold-mid);
+              font-size: 1.1rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
               touch-action: manipulation;
             ">✕</button>
           </div>
@@ -66,7 +58,7 @@
         <!-- Open scanner button — shown when camera is closed -->
         <div id="scanner-closed-wrap" style="display:none; text-align:center; margin-bottom:14px;">
           <button class="btn-primary" onclick="openScanner()" style="max-width:280px;">
-            📷 &nbsp;Open Scanner
+            📷 &nbsp;スキャナーを開く
           </button>
         </div>
       </div>
@@ -162,29 +154,45 @@
       rules: {
         title: '📜 ルール説明',
         body: `
-          1. 18の店舗をVisitし、各QRコードをスキャンしてください。<br>
-          2. 各店舗で質問に正しく答えると文字が明らかになります。<br>
-          3. 18の文字を集め、隠されたメッセージを解読してください。<br>
-          4. 各店舗は一度だけ完了できます。<br>
-          5. 任意の順序で店舗を訪問できます。
+          ※不具合が発生したり、わからないことがある場合は、1階110・111番教室「Area3Z」の生徒にお声がけください。<br>
+          または、081091@gyoshu.ed.jpまでお問い合わせください。<br>
+          <br>
+          1. 校内を歩き回り、QRコード付きのポスターを探そう！<br>
+          2. ポスターを見つけたら、ホーム画面のカメラを使ってQRコードを読み取ろう！<br>
+          3.四択クイズに挑戦！正解だと思う選択肢を1つ選び、「決定」ボタンを押そう！<br>
+          ・正解すると、キーワードが1文字表示されます。<br>
+          　　数秒後にホーム画面へ戻るので、次のQRコードを探してください。<br>
+          ・不正解の場合は、数秒後にホーム画面へ戻ります。<br>
+          　　再度QRコードを読み取り、正解するまで挑戦しよう！<br>
+          4. すべてのクイズに正解すると、コンプリート画面が表示されます！<br>
+          5. 景品は、<br>
+          　3α「謎解きはタイムスリップのあとで」（2階 特別教室1・2）<br>
+          　または<br>
+          　3Z「Area3Z」（1階 110・111番教室）<br>
+          　の無料チケットです！<br>
+          <br>
+          制限時間は模擬店が閉まる14:00まで！<br>
+          全問正解を目指して、文化祭を楽しんでください！
         `
       },
       cautions: {
         title: '⚠ 注意事項',
           body: `
-          · 他のプレイヤーと回答を共有しないでください。<br>
-          · 電話のバッテリーを充電したままにしてください — 全体を通して必要です。<br>
-          · 店舗の周囲の他のフェスティバル参加者に注意してください。<br>
-          · QRコードをスキャンしている間、店舗の入り口を塞がないでください。
+          ・ カメラが起動しない場合は、端末の設定でカメラへのアクセスを許可しているかご確認ください。<br>
+          ・ 問題ポスターはすべて同じデザインです。<br>
+          ・ 校内では走らないでください。<br>
+          ・ 発生したデータ通信費について、本校は一切の責任を負いかねます。あらかじめご了承ください。<br>
+          ・ 他の参加者や来場者の迷惑にならないよう、ご協力をお願いいたします。<br>
+          ・ ポスターや掲示物には触れたり、はがしたりしないでください。<br>
+          ・ 景品の交換は、コンプリート画面を該当模擬店の受付に提示してください。<br>
+          （該当模擬店は📜 ルール説明をチェックしてください）
         `
       },
       hints: {
         title: '💡 ヒント',
         body: `
-          · Look carefully around each shop for clues to the answer.<br>
-          · The letters reveal a well-known Japanese phrase.<br>
-          · Numbers in the answer are also part of the message.<br>
-          · If you get stuck, try speaking to the shop staff.
+          QRコード付きのポスターは、クラス企画の模擬店周辺や学年展示の近くに貼ってあるよ！<br>
+          イートインスペース、部活動の企画、体育館などのエリアには貼ってないので注意してね！
         `
       }
     };
@@ -329,7 +337,7 @@
       }
 
       if (!shopId || shopId < 1 || shopId > 18) {
-        statusEl.textContent = 'QR code not recognised. Try another shop.';
+        statusEl.textContent = 'QRコードが読み取れません。不具合がある場合、📜 ルール説明の指示に従ってください。';
         return;
       }
 
