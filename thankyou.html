@@ -43,12 +43,6 @@
 
   <script src="db.js"></script>
   <script>
-    // Mark the player as having seen the thank-you screen.
-    // This flag is what blocks re-entry to completion.html.
-    const state = QuizDB.getPlayerState();
-    state.thanked = true;
-    QuizDB.savePlayerState(state);
-
     // Block all back navigation from this screen.
     history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', () => {

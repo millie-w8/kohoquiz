@@ -71,7 +71,7 @@ const QUESTIONS = [
   },
   {
     shopId: 9,
-    q: "1αの企画、〈1αの企画名〉に出てくる動物はなに？",
+    q: "1αの企画、「ウマ息子爆裂レーース！2026」に出てくる動物はなに？",
     choices: ["羊", "うさぎ", "ライオン", "馬"],
     answer: 3,
     letter: "れ"
@@ -403,7 +403,7 @@ function showAlreadyAnswered(state) {
       <div class="result-title correct-text" style="margin-bottom:10px;">解答済み ✓</div>
       <p style="font-family:'Crimson Text',serif; font-size:1rem; color:var(--text-muted); line-height:1.8; font-style:italic;">
         すでにこの問題に正解しています。<br>
-        キーワード <strong class="gold-text">${questionData.letter}</strong> に文字が追加されました。
+        キーワードに <strong class="gold-text">${questionData.letter}</strong> の文字が追加されています。
       </p>
       <div id="countdown-wrap" style="margin-top:18px;">
         <p style="font-family:'Crimson Text',serif;font-style:italic;font-size:0.88rem;color:var(--text-muted);text-align:center;margin-bottom:6px;">

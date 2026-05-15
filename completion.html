@@ -77,7 +77,7 @@
   <script src="db.js"></script>
   <script>
     // ---- Guard -----------------------------------------------
-    // If already proceeded to thank-you, block access entirely.
+    // If already proceeded to thank-you, block access entirely.   
     const state = QuizDB.getPlayerState();
     if (state.thanked) {
       document.body.innerHTML = `
@@ -90,12 +90,13 @@
             この画面には再度アクセスできません。<br>ご参加ありがとうございました。✦
           </div>
         </div>
-      `;
+      `; 
       // Hard-block navigation too
       history.pushState(null, '', window.location.href);
       window.addEventListener('popstate', () => history.pushState(null, '', window.location.href));
       throw new Error('Access blocked'); // stop rest of script from running
     }
+    
     // ---- Letter layout (same as app.js) -------------------
     const QUESTIONS_COMPLETION = [
       { shopId:1,  letter:'あ' }, { shopId:2,  letter:'か' },
@@ -147,7 +148,16 @@
         document.getElementById('rating-saved').style.display = 'block';
         document.getElementById('rate-btn').disabled = true;
       });
-
+    function confirmFinish() {
+      const ok = confirm('この画面を閉じます。一度閉じると戻れません。よろしいですか？');
+      if (ok) {
+    // Set the flag HERE — only on explicit button press
+        const s = QuizDB.getPlayerState();
+        s.thanked = true;
+        QuizDB.savePlayerState(s);
+        window.location.replace('thankyou.html');
+      }
+    }
     function renderKeywordBoxComplete() {
       const container = document.getElementById('letters-container');
       container.innerHTML = '';
